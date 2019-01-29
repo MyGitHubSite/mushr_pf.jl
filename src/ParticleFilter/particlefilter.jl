@@ -96,6 +96,31 @@ function resample!(b::BufferedWeightedParticleBelief{S}, rng::AbstractRNG) where
     return b
 end
 
+function update_action!(up::StatefulParticleFilter, a, dt)
+    b = up.belief
+    pm = b._particle_memory
+    p = b.particles
+    wm = b._weight_memory
+    w = b.weights
+    resize!(pm, length(b.particles))
+    resize!(wm, length(b.particles))
+    predict!(p, up.predict_model, a, up.rng, dt)
+    return up
+end
+
+function update_obs!(up::StatefulParticleFilter, o, dt)
+    b = up.belief
+    pm = b._particle_memory
+    p = b.particles
+    wm = b._weight_memory
+    w = b.weights
+    resize!(pm, length(b.particles))
+    resize!(wm, length(b.particles))
+    reweight!(w, p, up.reweight_model, o, up.rng, dt)
+    # TODO(cxs): inplace resampler
+    resample!(b, up.rng)
+    return up
+end
 
 function update!(up::StatefulParticleFilter, a, o, dt)
     b = up.belief

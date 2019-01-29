@@ -9,55 +9,10 @@ using MuSHRSLAM.MotionModels: AckerModel, AckerParams, AckerData, step!
 using RoboLib.Geom: Pose2D
 using StaticArrays
 
-    # initial pose and ctrl
-    #x0 = 150
-    #y0 = 450
-    #th0 = 0
-    #v0 = 1
-    #delta0 = 0
-
-    # ackermodel params
-    #speed2erpm_offset = 0
-    #speed2erpm_gain = 1
-    #steering2servo_offset = 0
-    #steering2servo_gain = 1
-    #(state, ctrl)->ctrl,
-    #(state, ctrl)->state,
-    #car_length = 1
-    #dt = 1
-
-    # simulated laser scan params
-    #nrays = 30
-    #maxx = h
-    #maxy = w
-    #maxrange = 30 * map_scale
-    #fov = pi/1.5
-
-    # pf settings
-    # beam model
-    #a_short=0.01
-    #a_max=0.08
-    #a_rand=0.1
-    #a_hit=0.75
-    #sigma_hit=8.0
-    #lambda_short=1/2.0
-
-    #sigma_x = 5
-    #sigma_y = 5
-    #sigma_theta = deg2rad(10)
-    #init_sig_x = 30
-    #init_sig_y = 30
-    #init_sig_th = deg2rad(20)
-    #nparticles = 5000
-
-    # laser model
-    #disc = 0.5
-    #inv_squash_factor=1/2.0
-
 
 function setup_motion_model(binmap, mapoccupiedf, c::Dict{Symbol, Any})
     modeltype, mc = c[:motionmodel], c[:motionconfig]
-    pose0 = Pose2D(Float64, c[:pose0])
+    pose0 = Pose2D(c[:pose0])
     ctrl0 = SVector{length(c[:ctrl0])}(c[:ctrl0])
 
     if modeltype == :ackermann
@@ -106,11 +61,8 @@ function setup_sensor_model(binmap, mapoccupiedf, c::Dict{Symbol, Any})
     return sensormodel
 end
 
-function process_map(map, mc)
-    threshhold = mc[:threshhold]
-
-    # preprocess map
-    binmap = binarize(map, (el)->el<threshhold)
+function process_map(map, test)
+    binmap = binarize(map, test)
     mapoccupied(x::Integer, y::Integer)::Bool = let binmap=binmap
         @inbounds binmap[x, y]
     end
@@ -128,12 +80,11 @@ function setup_raycast(mapoccupiedf, maxrange, h)
     end
 end
 
-function setup_pf(map, c::Dict{Symbol, Any})
+function setup_pf(binmap, mapoccupiedf, c::Dict{Symbol, Any})
 
-    pose0 = Pose2D(Float64, c[:pose0])
+    pose0 = Pose2D(c[:pose0])
     ctrl0 = c[:ctrl0]
 
-    binmap, mapoccupiedf = process_map(map, c[:mapconfig])
     motionmodel, init_posef = setup_motion_model(binmap, mapoccupiedf, c)
     sensormodel  = setup_sensor_model(binmap, mapoccupiedf, c)
 
