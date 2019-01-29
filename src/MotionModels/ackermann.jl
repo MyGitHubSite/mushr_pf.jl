@@ -1,26 +1,36 @@
 using CoordinateTransformations, Rotations, StaticArrays
 using RoboLib.Geom: Pose2D
-export AckerModel, AckerData
+export AckerParams, AckerData
 
-struct AckerModel{SCALAR}
+struct AckerModel{D, P} <: MotionModel
+    data::D
+    params::P
+end
+
+
+#NOTE(cxs): I think there's a bug preventing m from being qualified as subtype of abstract type
+function (m::AckerModel)(state_t, ctrl_t, dt)
+    m.data.pose = Pose2D(state_t)
+    step!(m.data, m.params, dt)
+    return m.data.pose.statev
+end
+struct AckerParams{SCALAR} <: MotionParams
     speed2erpm_offset::SCALAR
     speed2erpm_gain::SCALAR
     steering2servo_offset::SCALAR
     steering2servo_gain::SCALAR
     car_length::SCALAR
-    dt::SCALAR
     #ctrl_noise!::Function
     #process_noise!::Function
 
-    function AckerModel(
+    function AckerParams(
         # convention: foo2bar_offset has units bar
         # convention: foo2bar_gain has units foo / bar
         speed2erpm_offset::S,
         speed2erpm_gain::S,
         steering2servo_offset::S,
         steering2servo_gain::S,
-        car_length::S,
-        dt::S) where S
+        car_length::S) where S
 
         new{S}(speed2erpm_offset,
             speed2erpm_gain,
@@ -28,13 +38,12 @@ struct AckerModel{SCALAR}
             steering2servo_gain,
             #(state, ctrl)->ctrl,
             #(state, ctrl)->state,
-            car_length,
-            dt,
+            car_length
         )
     end
 end
 
-mutable struct AckerData{P<:Pose2D, C<:SVector{2}}
+mutable struct AckerData{P<:Pose2D, C<:SVector{2}} <: MotionData
     pose::P
     ctrl::C
 
@@ -49,7 +58,8 @@ mutable struct AckerData{P<:Pose2D, C<:SVector{2}}
 end
 Base.eltype(d::AckerData{P, C}) where P where C = eltype(C)
 
-function step!(data::AckerData, model::AckerModel)
+step!(data::AckerData, model::AckerParams, dt, rng) = step!(data, model, dt)
+function step!(data::AckerData, model::AckerParams, dt)
     v, delta = data.ctrl
     xc, yc, thetac = data.pose.x, data.pose.y, data.pose.theta
 
@@ -69,9 +79,10 @@ function step!(data::AckerData, model::AckerModel)
         y_dot = v * s_thetac_beta
         theta_dot = 2 * v / model.car_length * sin(beta)
     end
-    x = xc + x_dot * model.dt
-    y = yc + y_dot * model.dt
-    theta = thetac + theta_dot * model.dt
+    x = xc + x_dot * dt
+    y = yc + y_dot * dt
+    theta = thetac + theta_dot * dt
 
     data.pose = Pose2D(x, y, theta)
+    return data
 end
