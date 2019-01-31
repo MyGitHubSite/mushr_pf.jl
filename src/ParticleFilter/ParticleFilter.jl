@@ -9,14 +9,13 @@ using MuSHRSLAM.MotionModels: AckerModel, AckerParams, AckerData, step!
 using RoboLib.Geom: Pose2D
 using StaticArrays
 
+#TODO(cxs): make vector state a Pose (need to define mean/mode/other functions over pose)
 
 function setup_motion_model(binmap, mapoccupiedf, c::Dict{Symbol, Any})
     modeltype, mc = c[:motionmodel], c[:motionconfig]
-    pose0 = Pose2D(c[:pose0])
-    ctrl0 = SVector{length(c[:ctrl0])}(c[:ctrl0])
 
     if modeltype == :ackermann
-        data = AckerData(pose0, ctrl0)
+        data = AckerData(c[:dtype])
         params = AckerParams(mc[:speed2erpm_offset], mc[:speed2erpm_gain], mc[:steering2servo_offset], mc[:steering2servo_gain], mc[:car_length])
         model = AckerModel(data, params)
     else
@@ -28,13 +27,22 @@ function setup_motion_model(binmap, mapoccupiedf, c::Dict{Symbol, Any})
     init_dist = MvNormal([0,0,0], [mc[:init_sigma_x], mc[:init_sigma_y], mc[:init_sigma_theta]])
 
     init_posef = let d=init_dist, n=length(init_dist), rng=c[:rng]
-        f(pose::SVector{N, T}) where {N,T} = SVector{N, T}(pose + rand(rng, d))
+        function f(pose::Pose2D)
+            nx, ny, nrz = rand(rng, d)
+            x,y,rz = pose.statev
+            return Pose2D(x+nx, y+ny, rz+nrz)
+        end
     end
 
     if mc[:stochastic]
         stochasticmotionmodel = let m=model, pd=process_dist, cd=ctrl_dist
-            function f(state::SVector{N1, T1}, ctrl::SVector{N2, T2}, rng, dt) where {N1,T1,N2,T2}
-                model(state, ctrl + SVector{N2, T2}(rand(rng, cd)), dt) + SVector{N1, T1}(rand(rng, pd))
+            function f(state::Pose2D, ctrl::SVector{N2, T2}, rng, dt) where {N2,T2}
+                state_t1 = model(state, ctrl + SVector{N2, T2})
+
+                nx, ny, nrz = rand(rng, pd)
+                x,y,rz = state_t1.statev
+
+                return Pose2D(x+nx, y+ny, rz+nrz)
             end
         end
         return stochasticmotionmodel, init_posef
@@ -50,11 +58,11 @@ function setup_sensor_model(binmap, mapoccupiedf, c::Dict{Symbol, Any})
         bc = sc[:beamconfig]
         lc = sc[:laserconfig]
 
-        raymethod = setup_raycast(mapoccupiedf, lc[:maxrange], size(binmap,1))
+        raymethod = setup_raycast(mapoccupiedf, lc[:max_range_px], size(binmap,1))
 
-        beammodel = DiscBeamModel(bc[:resolution], lc[:maxrange]; a_short=bc[:a_short], a_max=bc[:a_max], a_rand=bc[:a_rand], a_hit=bc[:a_hit], sigma_hit=bc[:sigma_hit],
+        beammodel = DiscBeamModel(bc[:resolution], lc[:max_range_px]; a_short=bc[:a_short], a_max=bc[:a_max], a_rand=bc[:a_rand], a_hit=bc[:a_hit], sigma_hit=bc[:sigma_hit],
             lambda_short=bc[:lambda_short], logprob=true)
-        sensormodel = LaserScanModel(raymethod, beammodel, lc[:squash_factor], lc[:fov], lc[:maxrange])
+        sensormodel = LaserScanModel(raymethod, beammodel, lc[:squash_factor], lc[:max_range_px])
     else
         @assert false
     end
@@ -72,9 +80,11 @@ end
 function setup_raycast(mapoccupiedf, maxrange, h)
     let mr=maxrange, mof=mapoccupiedf, h=h
         function rc(x, y, theta)
-            xg, yg, thetag = to_grid(h, x, y, theta)
+            #xg, yg, thetag = to_grid(h, x, y, theta)
+            xg, yg, thetag = y, x, pi/2 - theta
             xhitg, yhitg = cast_heading(xg, yg, thetag, mr, mof)
-            xhit, yhit = from_grid(h, xhitg, yhitg)
+            #xhit, yhit = from_grid(h, xhitg, yhitg)
+            xhit, yhit = yhitg, xhitg
             return xhit, yhit, theta
         end
     end
@@ -82,13 +92,12 @@ end
 
 function setup_pf(binmap, mapoccupiedf, c::Dict{Symbol, Any})
 
-    pose0 = Pose2D(c[:pose0])
-    ctrl0 = c[:ctrl0]
 
     motionmodel, init_posef = setup_motion_model(binmap, mapoccupiedf, c)
     sensormodel  = setup_sensor_model(binmap, mapoccupiedf, c)
 
-    particles = BufferedWeightedParticleBelief([init_posef(pose0.statev) for _ in 1:c[:nparticles]])
+    #TODO(cxs): clean up, allocate empty vector
+    particles = BufferedWeightedParticleBelief([Pose2D() for _ in 1:c[:max_particles]])
     pf = StatefulParticleFilter(particles, motionmodel, sensormodel)
     return pf, (pose)->reset!(pf, pose, init_posef)
 end

@@ -3,7 +3,6 @@ using Distributions
 using LinearAlgebra
 
 # TODO(cxs): port what works out back to upstream
-
 struct BufferedWeightedParticleBelief{T}
     particles::Vector{T}
     _particle_memory::Vector{T}
@@ -44,8 +43,8 @@ end
 
 function reweight!(weights, particles, reweight_model::Function, obs, rng, dt)
     for i in 1:length(particles)
-        x = particles[i]
-        weights[i] = reweight_model(x, obs, rng)
+        @inbounds x = particles[i]
+        @inbounds weights[i] = reweight_model(x, obs, rng)
     end
 end
 
@@ -82,7 +81,7 @@ function resample!(b::BufferedWeightedParticleBelief{S}, rng::AbstractRNG) where
     c = b.weights[1]
     U = r
     i = 1
-    for m in 1:n
+    @inbounds for m in 1:n
         while U > c
             i += 1
             c += b.weights[i]
@@ -140,8 +139,8 @@ end
 function reset!(pf::StatefulParticleFilter, newpose, init_posef)
     b = pf.belief
     w = 1/length(b.particles)
-    for i in length(b.particles)
-        b.particles[i] = init_posef(newpose.statev)
+    for i in 1:length(b.particles)
+        b.particles[i] = init_posef(newpose)
         b.weights[i] = w
     end
 end

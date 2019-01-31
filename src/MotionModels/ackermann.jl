@@ -10,9 +10,9 @@ end
 
 #NOTE(cxs): I think there's a bug preventing m from being qualified as subtype of abstract type
 function (m::AckerModel)(state_t, ctrl_t, dt)
-    m.data.pose = Pose2D(state_t)
+    m.data.pose = state_t
     step!(m.data, m.params, dt)
-    return m.data.pose.statev
+    return m.data.pose
 end
 struct AckerParams{SCALAR} <: MotionParams
     speed2erpm_offset::SCALAR
@@ -51,7 +51,7 @@ mutable struct AckerData{P<:Pose2D, C<:SVector{2}} <: MotionData
         new{P, C}(pose, ctrl)
     end
     function AckerData(T::Type)
-        pose = Pose2D(T, zero(T), zero(T), zero(T))
+        pose = Pose2D()
         ctrl = zeros(SVector{2, T})
         new{typeof(pose), typeof(ctrl)}(pose, ctrl)
     end
@@ -59,9 +59,10 @@ end
 Base.eltype(d::AckerData{P, C}) where P where C = eltype(C)
 
 step!(data::AckerData, model::AckerParams, dt, rng) = step!(data, model, dt)
+# TODO(cxs): deal with non-zero rx ry z
 function step!(data::AckerData, model::AckerParams, dt)
     v, delta = data.ctrl
-    xc, yc, thetac = data.pose.x, data.pose.y, data.pose.theta
+    x, y, rz = data.pose.statev
 
     if abs(delta) < 0.001
         s, c = sincos(thetac)
@@ -83,6 +84,6 @@ function step!(data::AckerData, model::AckerParams, dt)
     y = yc + y_dot * dt
     theta = thetac + theta_dot * dt
 
-    data.pose = Pose2D(x, y, theta)
+    data.pose = Pose2D(x, y, rz)
     return data
 end

@@ -1,7 +1,7 @@
 using Distributions, LinearAlgebra
 
 #TODO after changeing raycast add map to sense functor args
-
+#TODO(cxs): normalize beam model in disc no cont b/c discretely sampled pdf
 struct BeamModel{T<:AbstractFloat} <: AbstractBeamModel
     a_hit::T
     a_short::T
@@ -25,14 +25,15 @@ end
 function (m::BeamModel)(z, zexp)
     if 0 <= z <= m.zmax
         d_hit = Normal(zexp, m.sigma_hit)
-        eta_hit = cdf(d_hit, m.zmax) - cdf(d_hit, 0) # integral_0_zmax Normal(zexp, m.sigma_hit)
-        p_hit = 1/eta_hit * pdf(d_hit, z)
+        #eta_hit = cdf(d_hit, m.zmax) - cdf(d_hit, 0) # integral_0_zmax Normal(zexp, m.sigma_hit)
+        #p_hit = 1/eta_hit * pdf(d_hit, z)
+        p_hit = pdf(d_hit, z)
     else
         p_hit = 0
     end
     if 0 <= z <= zexp
         d_short = Exponential(1/m.lambda_short)
-        eta_short = cdf(d_short, zexp) - cdf(d_short, 0)
+        #eta_short = cdf(d_short, zexp) - cdf(d_short, 0)
         #TODO(cxs): deal with eta being 0
         p_short =  pdf(d_short, z)
         #p_short = 1/eta_short * pdf(d_short, z)
