@@ -1,51 +1,63 @@
 using RayCast.Bresenham: cast_heading
-using RoboLib.Util: euclidean, to_grid
+using RoboLib.Util: euclidean, img2grid
 using RoboLib.Geom: Pose2D
+using LinearAlgebra
 
 export LaserScanModel
 
 #TODO:(remove mutable, scratch)
-mutable struct LaserScanModel{F, M, S, MAXR} <: AbstractSensorModel
-    "castmethod(x, y, theta)->(xhit, yhit)"
-    castmethod::F
+mutable struct LaserScanModel{M, F, S} <: AbstractSensorModel
     beammodel::M
-    inv_squash_factor::S
-    maxrange::MAXR
-    scratchposes
-    scratchhitposes
-    scratchraw
+    "rangefn(T_WP::Pose2D, theta_W)->(xhit_W, yhit_W)"
+    rangefn::F
+    inv_squash::S
+    #scratchposes
+    #scratchhitposes
+    #scratchraw
 end
 
+#function LaserScanModel(beammodel::M, rangefn::F, inv_squash::S) where {M, F, S}
+#    LaserScanModel{M, F, S}(beammodel, rangefn, inv_squash)#, [], [], [])
+#end
 
-function LaserScanModel(cast::F, beam::M, squash::S, maxrange::R) where {F,M,S,R}
-    LaserScanModel{F, M, S, R}(cast, beam, squash, maxrange, [], [], [])
-end
+# assumes state_t, obs_t in SI units and that compose(m.T_MW, state_t.statev)
+# is in map frame/units
+#TODO(cxs): don't depend on beammodel being logprob
+function reweight!(weights_k, particles_WP_k::AbstractVector{<:Pose2D{T}}, obs_W_k, rng, dt, m::LaserScanModel) where T
+    #state_t_MP = m.T_MW ∘ state_t_WP
+    #x, y, theta = state_t_MP.statev
 
-function (m::LaserScanModel)(state_t, obs_t, rng)
-    x, y, theta = state_t.statev
-    #println((x,y,theta))
-    obsheadings, obsranges = obs_t
+    obsangles_k, obsranges_W_k = obs_W_k
     prob = 0
-    #TODO(cxs): don't depend on beammodel being logprob
 
+    #m.scratchposes=[]
+    #m.scratchhitposes=[]
+    #maxw = -1000000000
+    #maxi = 0
+    #maxposes = []
+    @inbounds for i in eachindex(particles_WP_k)
+        #poses=[]
+        T_WP = particles_WP_k[i]
+        for (obsangle, obsrange_W) in zip(obsangles_k, obsranges_W_k)
+            range_exp_W = m.rangefn(T_WP, obsangle)
+            p = m.beammodel(obsrange_W, range_exp_W)
+            #x_W, y_W, theta_W = T_WP.statev
+            #push!(poses, T_WHIT)
+            #@assert p <= 0
+            prob += p
+        end
+        weights_k[i] = prob * m.inv_squash
+        #if weights_k[i] > maxw
+        #    maxw=weights_k[i]
+        #    maxi=i
+        #    maxposes=poses
+        #end
 
-    m.scratchposes=[]
-    m.scratchhitposes=[]
-    #m.scratchraw=[]
-    for (i, (obsheading, obsrange)) in enumerate(zip(obsheadings, obsranges))
-        xhit_exp, yhit_exp = m.castmethod(x, y, obsheading+theta)
-        range_exp = euclidean(x, y, xhit_exp, yhit_exp)
-        #TODO(CXS): remove hardcode
-        p = m.beammodel(obsrange, range_exp*0.02)
-        #println(p)
-
-        push!(m.scratchhitposes, Pose2D(xhit_exp, yhit_exp, obsheading+theta))
-        push!(m.scratchposes, Pose2D(x, y, theta))
-        #push!(m.scratchraw, Pose2D())
-
-        @assert p <= 0
-        prob += p
     end
+
+    return weights_k
+    #for p in maxposes
+    #    push!(m.scratchhitposes, p)
+    #end
     #println(exp(prob))
-    return prob * m.inv_squash_factor
 end

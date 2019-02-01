@@ -72,6 +72,7 @@ struct DiscBeamModel{P, S, M} <: AbstractBeamModel
 
 
         disc = round(Int, zmax / resolution)
+        #println((zmax, resolution, disc))
         dists = collect(LinRange(0, zmax, disc))
         p_z_zexp = zeros(Float64, length(dists), length(dists))
         model = BeamModel(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax, logprob=logprob)
@@ -92,8 +93,8 @@ function (p::DiscBeamModel)(z::Real, zexp::Real)
     #if !(0 < zexp <= p._zmax) @warn("zexp not in range ", (zexp, p._zmax)) end
     #println("ZZEXP ", (z, zexp))
     #println(p._zmax)
-    z = min(z, p._zmax)
-    zexp = min(zexp, p._zmax)
+    z = max(0, min(z, p._zmax))
+    zexp = max(0, min(zexp, p._zmax))
     #println("ZZEXP2 ", (z, zexp))
     z = round(Int, z * p._scale + 1)
     zexp = round(Int, zexp * p._scale + 1)

@@ -1,5 +1,7 @@
 using Random
 using Distributions
+using Statistics
+using RoboLib.Geom: Pose2D
 using LinearAlgebra
 
 # TODO(cxs): port what works out back to upstream
@@ -11,52 +13,38 @@ struct BufferedWeightedParticleBelief{T}
     _weight_memory::Vector{Float64}
 
 end
-function BufferedWeightedParticleBelief(particles::AbstractVector{T}, weights::AbstractVector{Float64}) where {T}
+
+@inline function BufferedWeightedParticleBelief(particles::AbstractVector{T}, weights::AbstractVector{Float64}) where {T}
     BufferedWeightedParticleBelief{T}(particles, similar(particles), weights, similar(weights))
 end
-function BufferedWeightedParticleBelief(particles::AbstractVector{T}) where {T}
+
+@inline function BufferedWeightedParticleBelief(particles::AbstractVector{T}) where {T}
     weights = fill(Float64(1)/length(particles), length(particles))
-    BufferedWeightedParticleBelief{T}(particles, similar(particles), weights, similar(weights))
+    BufferedWeightedParticleBelief(particles, weights)
 end
 
 Distributions.mean(b::BufferedWeightedParticleBelief) = sum((b.weights .* b.particles)) ./ sum(b.weights)
 Distributions.mode(b::BufferedWeightedParticleBelief) = b.particles[argmax(b.weights)]
-
-# ---
+Distributions.mean(b::BufferedWeightedParticleBelief{Pose2D}) = mean(b.particles)
 
 # TODO(cxs): immutable
-mutable struct StatefulParticleFilter{PC,PM,RM,RNG<:AbstractRNG}
+mutable struct StatefulParticleFilter{PC,P,R,RE,RNG<:AbstractRNG}
     belief::PC
-    predict_model::PM
-    reweight_model::RM
+    predict!::P
+    reweight!::R
+    reset!::RE
     rng::RNG
 end
 
-function StatefulParticleFilter(pc::BufferedWeightedParticleBelief, pmodel, rmodel)
+function StatefulParticleFilter(pc::BufferedWeightedParticleBelief, predict!, reweight!, reset!)
     return StatefulParticleFilter(pc,
-                                  pmodel,
-                                  rmodel,
+                                  predict!,
+                                  reweight!,
+                                  reset!,
                                   Random.GLOBAL_RNG
                                   )
 end
-# ----
 
-function reweight!(weights, particles, reweight_model::Function, obs, rng, dt)
-    for i in 1:length(particles)
-        @inbounds x = particles[i]
-        @inbounds weights[i] = reweight_model(x, obs, rng)
-    end
-end
-
-function predict!(particles, predict_model::Function, ctrl, rng, dt)
-    for i in 1:length(particles)
-        x = particles[i]
-        particles[i] = predict_model(x, ctrl, rng, dt)
-    end
-end
-
-# ----
-using Statistics
 function resample!(b::BufferedWeightedParticleBelief{S}, rng::AbstractRNG) where {S}
     #w = Weights(b.weights)
     #p = sample(b.particles, w, length(b.particles))
@@ -70,6 +58,7 @@ function resample!(b::BufferedWeightedParticleBelief{S}, rng::AbstractRNG) where
     w = b.weights
     m = maximum(w)
     w[:] .= exp.(w .- m)
+
     #println((minimum(b.weights), maximum(b.weights), mean(b.weights), std(b.weights)))
     ws = sum(b.weights)
     n = length(b.weights)
@@ -90,57 +79,41 @@ function resample!(b::BufferedWeightedParticleBelief{S}, rng::AbstractRNG) where
         pm[m] = b.particles[i]
         wm[m] = b.weights[i]
     end
-    b.particles[:] .= pm
-    b.weights[:] .= wm
+    copy!(b.particles, pm)
+    copy!(b.weights, wm)
     return b
 end
 
-function update_action!(up::StatefulParticleFilter, a, dt)
+@inline function update_act!(up::StatefulParticleFilter, a, dt)
+    up.predict!(up.belief.particles, a, up.rng, dt)
+    up
+end
+
+@inline function update_obs!(up::StatefulParticleFilter, o, dt)
     b = up.belief
-    pm = b._particle_memory
-    p = b.particles
-    wm = b._weight_memory
-    w = b.weights
-    resize!(pm, length(b.particles))
-    resize!(wm, length(b.particles))
-    predict!(p, up.predict_model, a, up.rng, dt)
+    up.reweight!(b.weights, b.particles, o, up.rng, dt)
     return up
 end
 
-function update_obs!(up::StatefulParticleFilter, o, dt)
-    b = up.belief
-    pm = b._particle_memory
-    p = b.particles
-    wm = b._weight_memory
-    w = b.weights
-    resize!(pm, length(b.particles))
-    resize!(wm, length(b.particles))
-    reweight!(w, p, up.reweight_model, o, up.rng, dt)
-    # TODO(cxs): inplace resampler
-    resample!(b, up.rng)
-    return up
+@inline function reset!(pf::StatefulParticleFilter, state)
+    pf.reset!(pf.belief.particles, state, pf.rng)
+    pf.belief.weights .= 1/length(pf.belief.weights)
 end
 
-function update!(up::StatefulParticleFilter, a, o, dt)
-    b = up.belief
-    pm = b._particle_memory
-    p = b.particles
-    wm = b._weight_memory
-    w = b.weights
-    resize!(pm, length(b.particles))
-    resize!(wm, length(b.particles))
-    predict!(p, up.predict_model, a, up.rng, dt)
-    reweight!(w, p, up.reweight_model, o, up.rng, dt)
-    # TODO(cxs): inplace resampler
-    resample!(b, up.rng)
-    return up
-end
+@inline resample!(up::StatefulParticleFilter) = resample!(up.belief, up.rng)
 
-function reset!(pf::StatefulParticleFilter, newpose, init_posef)
-    b = pf.belief
-    w = 1/length(b.particles)
-    for i in 1:length(b.particles)
-        b.particles[i] = init_posef(newpose)
-        b.weights[i] = w
-    end
-end
+#function update!(up::StatefulParticleFilter, a, o, dt)
+#    b = up.belief
+#    pm = b._particle_memory
+#    p = b.particles
+#    wm = b._weight_memory
+#    w = b.weights
+#    resize!(pm, length(b.particles))
+#    resize!(wm, length(b.particles))
+#    predict!(p, up.predict_model, a, up.rng, dt)
+#    reweight!(w, p, up.reweight_model, o, up.rng, dt)
+#    # TODO(cxs): inplace resampler
+#    resample!(b, up.rng)
+#    return up
+#end
+
