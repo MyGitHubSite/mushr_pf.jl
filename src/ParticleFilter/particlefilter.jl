@@ -65,10 +65,14 @@ function resample!(b::BufferedWeightedParticleBelief, rng::AbstractRNG)
     #m = maximum(w)
     #w[:] .= exp.(w .- m)
     #normalize!(b.weights, 1)
-    println("here")
+    try
     weights = Weights(b.weights)
     sample!(b.particles, weights, b.particles)
-    weights.=1
+    catch e
+        println((minimum(b.weights), maximum(b.weights), mean(b.weights), std(b.weights)))
+        rethrow()
+    end
+    b.weights.=1/length(b.weights)
     return
 
     #println(b.weights, " ", sum(b.weights))

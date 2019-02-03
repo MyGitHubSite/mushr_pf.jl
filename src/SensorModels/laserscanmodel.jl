@@ -30,7 +30,7 @@ mutable struct LaserScanModel{M, F, F1, F2, F3, F4} <: AbstractSensorModel
     _update::F3
     _final!::F4
     #scratchposes
-    #scratchhitposes
+    scratchhitposes
     #scratchraw
 
     # TODO: generated? somehow inline variable update funcs?
@@ -54,11 +54,9 @@ mutable struct LaserScanModel{M, F, F1, F2, F3, F4} <: AbstractSensorModel
         else
             error("Type \"$name\" not know")
         end
-        new{M, F, typeof(init), typeof(combine), typeof(update), typeof(final!)}(beammodel, rangemethodW, init, combine, update, final!)
+        new{M, F, typeof(init), typeof(combine), typeof(update), typeof(final!)}(beammodel, rangemethodW, init, combine, update, final!, [])
     end
 end
-
-
 
 function reweight!(weights_k, particles_WP_k::AbstractVector{<:Pose2D{T}}, obs_W_k, rng, dt, m::LaserScanModel) where T
     obsangles_k, obsranges_W_k = obs_W_k
@@ -66,21 +64,39 @@ function reweight!(weights_k, particles_WP_k::AbstractVector{<:Pose2D{T}}, obs_W
     #@assert length(unique(weights_k)) == 1
     #@assert isapprox(weights_k[1], 1/length(weights_k)) "$(weights_k[1])"
     totalw = 0
+    empty!(m.scratchhitposes)
     for i in eachindex(particles_WP_k)
 
         prob = m._init()
-        #poses=[]
         T_WP = particles_WP_k[i]
+        j=0
         for (obsangle, obsrange_W) in zip(obsangles_k, obsranges_W_k)
-            range_exp_W = m.rangemethodW(T_WP, obsangle)
+
+            range_exp_W, T_WH = m.rangemethodW(T_WP, obsangle, :W)
+            #if j<5 && i<2
+            #    println((T_WH.statev))
+            #    println((obsrange_W, range_exp_W),"\n")
+            #end
+            #j+=1
             p = m.beammodel(obsrange_W, range_exp_W)
-            #println((obsrange_W, range_exp_W),"\n")
+            #println((obsrange_W, range_exp_W, p))
+            @assert !iszero(p) && !isnan(p)
             #x_W, y_W, theta_W = T_WP.statev
-            #push!(poses, T_WHIT)
+            if i == 1
+                #println(length(obsangles_k))
+                #println((obsrange_W, range_exp_W))
+                push!(m.scratchhitposes, T_WH)
+                #println(p)
+            end
             #@assert p <= 0
             #wbar += p
             #prob += p^3
+            #if iszero(p)
+            #    continue
+            #end
             prob = m._combine(prob, p)
+            #println(prob)
+            #@assert !iszero(prob) && !isnan(prob)
             #println(prob)
         end
         #println("SQ ", m.inv_squash)
@@ -94,7 +110,10 @@ function reweight!(weights_k, particles_WP_k::AbstractVector{<:Pose2D{T}}, obs_W
         #    maxi=i
         #    maxposes=poses
         #end
+        #println("PROB ", prob)
     end
+
+    #TODO add back final!
     #m._final!(weights_k)
     #println(weights_k[1:10])
     #weights_k ./= totalw

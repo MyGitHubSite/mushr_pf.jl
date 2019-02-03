@@ -61,17 +61,31 @@ struct DiscBeamPDF{P, S, M} <: AbstractBeamPDF
             p_z_zexp_W[:, i_zexp_W] ./= norm
         end
         scale = length(dists_W) / zmax_W
+        @assert !any(isnan, p_z_zexp_W)
+        @assert !any(iszero, p_z_zexp_W)
         new{typeof(p_z_zexp_W), typeof(scale), typeof(zmax_W)}(p_z_zexp_W, scale, zmax_W)
     end
 end
 
 # In world units
 function (bm::DiscBeamPDF)(z_W::Real, zexp_W::Real)
-    z_W = clamp(z_W, 0, bm._zmax)
-    zexp_w = clamp(zexp_W, 0, bm._zmax)
+    #x,y = z_W, zexp_W
     z_W = round(Int, z_W * bm._scale + 1)
     zexp_W = round(Int, zexp_W * bm._scale + 1)
-    @assert 1 <= z_W <= length(bm._p_z_zexp_W)
-    @assert 1 <= zexp_W <= length(bm._p_z_zexp_W)
+    z_W = clamp(z_W, 1, size(bm._p_z_zexp_W,1))
+    zexp_W = clamp(zexp_W, 1, size(bm._p_z_zexp_W,2))
+    #@assert 1 <= z_W <= size(bm._p_z_zexp_W, 1)
+    #@assert 1 <= zexp_W <= size(bm._p_z_zexp_W, 2)
+    p = bm._p_z_zexp_W[z_W, zexp_W]
+    if isnan(p) || iszero(p)
+        #println((z_W, zexp_W,p,bm._zmax,x,y))
+        #println(bm._p_z_zexp_W)
+        #println(bm._p_z_zexp_W[z_W, zexp_W])
+        @assert !any(isnan, bm._p_z_zexp_W)
+    end
+    if iszero(p)
+        println(z_W, "-",zexp_W)
+    end
+    @assert !iszero(p)
     return @inbounds bm._p_z_zexp_W[z_W, zexp_W]
 end
