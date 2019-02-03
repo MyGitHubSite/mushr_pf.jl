@@ -40,6 +40,7 @@ step!(data::AckerData, model::AckerParams, dt, rng) = step!(data, model, dt)
 function step!(data::AckerData{T}, model::AckerParams, dt) where T
     v, delta = data.ctrl
     xc, yc, thetac = data.pose.statev
+    #println("DELTA: ", (v, delta, xc, yc, thetac))
 
     if abs(delta) < 0.001
         s, c = sincos(thetac)
@@ -53,6 +54,8 @@ function step!(data::AckerData{T}, model::AckerParams, dt) where T
         x_dot = v * c_thetac_beta
         y_dot = v * s_thetac_beta
         theta_dot = 2 * v / model.car_length * sin(beta)
+        #println("SINBETA L TDOT", (sin(beta), model.car_length, theta_dot))
+        #println("XYDOT: ", (x_dot, y_dot))
     end
     x = xc + x_dot * dt
     y = yc + y_dot * dt

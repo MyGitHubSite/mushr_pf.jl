@@ -45,6 +45,9 @@ function reset!(particles::AbstractVector{Pose2D{P}}, pose::Pose2D, rng, m::Basi
     end
 end
 
+#ctrlnoise(ctrl::SVecotr{N, T}, m::BasicStochasticPredictModel, rng) = SVector{N, T}(rand(rng, m.ctrl_dist)) + ctrl
+@inline processnoise(Pose2D{T}, rng, process_dist) where T = Pose2D{T}(pose.statev + SVector{3, T}(rand(rng, process_dist)))
+
 function predict!(particles::AbstractVector{Pose2D{P}}, ctrl::SVector{N, C}, rng, dt, m::BasicStochasticPredictModel) where {P,N,C}
     for i in eachindex(particles)
         m.data.pose = particles[i]

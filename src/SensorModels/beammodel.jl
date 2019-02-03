@@ -1,8 +1,10 @@
 using Distributions, LinearAlgebra
+using FastClosures
 
 #TODO after changeing raycast add map to sense functor args
 #TODO(cxs): normalize beam model in disc no cont b/c discretely sampled pdf
-struct BeamModel{T<:AbstractFloat} <: AbstractBeamModel
+
+struct BeamPDF{T<:AbstractFloat} <: AbstractBeamPDF
     a_hit::T
     a_short::T
     a_max::T
@@ -10,95 +12,66 @@ struct BeamModel{T<:AbstractFloat} <: AbstractBeamModel
     sigma_hit::T
     lambda_short::T
     zmax::T
-    logprob::Bool
 
-    function BeamModel(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax; logprob=false)
+    function BeamPDF(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax)
         eta = a_short + a_max + a_rand + a_hit
         a_hit /= eta
         a_short /= eta
         a_max /= eta
         a_rand /= eta
-        new{Float64}(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax, logprob)
+        new{Float64}(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax)
     end
 end
 
-function (m::BeamModel)(z, zexp)
-    if 0 <= z <= m.zmax
-        d_hit = Normal(zexp, m.sigma_hit)
-        #eta_hit = cdf(d_hit, m.zmax) - cdf(d_hit, 0) # integral_0_zmax Normal(zexp, m.sigma_hit)
-        #p_hit = 1/eta_hit * pdf(d_hit, z)
-        p_hit = pdf(d_hit, z)
-    else
-        p_hit = 0
-    end
-    if 0 <= z <= zexp
-        d_short = Exponential(1/m.lambda_short)
-        #eta_short = cdf(d_short, zexp) - cdf(d_short, 0)
-        #TODO(cxs): deal with eta being 0
-        p_short =  pdf(d_short, z)
-        #p_short = 1/eta_short * pdf(d_short, z)
-    else
-        p_short = 0
-    end
-    if z ≈ m.zmax
-        p_max = 1
-    else
-        p_max = 0
-    end
-    if 0 <= z <= m.zmax
-        p_rand = 1/m.zmax
-    else
-        p_rand = 0
-    end
-    p = (m.a_hit * p_hit
-       + m.a_short * p_short
-       + m.a_max * p_max
-       + m.a_rand * p_rand)
-    if p > 0
-        return m.logprob ? log(p) : p
-    else
-        return 0
-    end
+# NOTE: unnormalized b/c there's no way to
+# normalize before discretization
+function (m::BeamPDF)(z, zexp_W)
+    if zexp_W > m.zmax return 0 end
+    # p_hit
+    p = pdf(Normal(zexp_W, m.sigma_hit), z) * m.a_hit
+    # p_short
+    p += 0<=z<=zexp_W ? pdf(Exponential(1/m.lambda_short), z) * m.a_short : 0
+    # p_max TODO: set tolerance
+    p += z ≈ m.zmax ? m.a_max : 0
+    # p_rand
+    p += m.a_rand/m.zmax
+    return p
 end
 
 
-struct DiscBeamModel{P, S, M} <: AbstractBeamModel
-    _p_z_zexp::P # _p_z_zexp[z, z_exp] = p(z | zexp)
+struct DiscBeamPDF{P, S, M} <: AbstractBeamPDF
+    _p_z_zexp_W::P # _p_z_zexp_W[z, z_exp] = p(z | zexp_W)
     _scale::S # units= 1/units(zmax)
     _zmax::M
 
-    function DiscBeamModel(resolution, zmax; a_hit=0.75, a_short=0.01, a_max=0.08, a_rand=0.1, sigma_hit=8.0,
-        lambda_short=1/2.0, logprob=false)
+    function DiscBeamPDF(scale_WM, zmax_W; a_hit=0.75, a_short=0.1, a_max=0.05, a_rand=0.1, sigma_hit=1.0,
+        lambda_short=1/5)
 
-
-        disc = round(Int, zmax / resolution)
-        #println((zmax, resolution, disc))
-        dists = collect(LinRange(0, zmax, disc))
-        p_z_zexp = zeros(Float64, length(dists), length(dists))
-        model = BeamModel(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax, logprob=logprob)
-        for (i_zexp, zexp) in enumerate(dists)
-            for (i_z, z) in enumerate(dists)
-                p_z_zexp[i_z, i_zexp] = model(z, zexp)
+        # +1 b/c z in inclusive range [0,zmax]
+        dists_W = collect(LinRange(0, zmax_W, ceil(Int, zmax_W/scale_WM) + 1))
+        p_z_zexp_W = zeros(Float64, length(dists_W), length(dists_W))
+        model = BeamPDF(a_hit, a_short, a_max, a_rand, sigma_hit, lambda_short, zmax_W)
+        for (i_zexp_W, zexp_W) in enumerate(dists_W)
+            norm = 0.0
+            for (i_z_W, z_W) in enumerate(dists_W)
+                p = model(z_W, zexp_W)
+                p_z_zexp_W[i_z_W, i_zexp_W] = p
+                norm += p
             end
-            normalize!(p_z_zexp[:, i_zexp])
+            p_z_zexp_W[:, i_zexp_W] ./= norm
         end
-        scale = (length(dists) - 1)/ zmax
-        new{typeof(p_z_zexp), typeof(scale), typeof(zmax)}(p_z_zexp, scale, zmax)
+        scale = length(dists_W) / zmax_W
+        new{typeof(p_z_zexp_W), typeof(scale), typeof(zmax_W)}(p_z_zexp_W, scale, zmax_W)
     end
 end
 
-function (p::DiscBeamModel)(z::Real, zexp::Real)
-    # TODO(cxs): do we want to handle > zmax here or in caller?
-    #if !(0 < z <= p._zmax) @warn("z not in range ", (z, p._zmax)) end
-    #if !(0 < zexp <= p._zmax) @warn("zexp not in range ", (zexp, p._zmax)) end
-    #println("ZZEXP ", (z, zexp))
-    #println(p._zmax)
-    z = max(0, min(z, p._zmax))
-    zexp = max(0, min(zexp, p._zmax))
-    #println("ZZEXP2 ", (z, zexp))
-    z = round(Int, z * p._scale + 1)
-    zexp = round(Int, zexp * p._scale + 1)
-    #println("ZZEXP3 ", (z, zexp))
-    #println(p._scale)
-    return p._p_z_zexp[z, zexp]
+# In world units
+function (bm::DiscBeamPDF)(z_W::Real, zexp_W::Real)
+    z_W = clamp(z_W, 0, bm._zmax)
+    zexp_w = clamp(zexp_W, 0, bm._zmax)
+    z_W = round(Int, z_W * bm._scale + 1)
+    zexp_W = round(Int, zexp_W * bm._scale + 1)
+    @assert 1 <= z_W <= length(bm._p_z_zexp_W)
+    @assert 1 <= zexp_W <= length(bm._p_z_zexp_W)
+    return @inbounds bm._p_z_zexp_W[z_W, zexp_W]
 end
