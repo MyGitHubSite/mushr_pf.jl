@@ -2,18 +2,8 @@ using CoordinateTransformations, Rotations, StaticArrays
 using RoboLib.Geom: Pose2D
 export AckerParams, AckerData
 
-
-
-#NOTE(cxs): I think there's a bug preventing m from being qualified as subtype of abstract type
-
 struct AckerParams{SCALAR<:AbstractFloat} <: MotionParams
-    #speed2erpm_offset::SCALAR
-    #speed2erpm_gain::SCALAR
-    #steering2servo_offset::SCALAR
-    #steering2servo_gain::SCALAR
     car_length::SCALAR
-    #ctrl_noise!::Function
-
 end
 
 mutable struct AckerData{T} <: MotionData
@@ -34,33 +24,36 @@ end
 @inline AckerData(pose, ctrl) = AckerData{Float64}(pose, ctrl)
 @inline AckerData() = AckerData{Float64}()
 
-step!(data::AckerData, model::AckerParams, dt, rng) = step!(data, model, dt)
+@inline function _step(v, delta, thetac, car_length)
+    beta = atan(tan(delta) / 2)
+    s_thetac_beta, c_thetac_beta = sincos(thetac + beta)
 
+    x_dot = v * c_thetac_beta
+    y_dot = v * s_thetac_beta
+    theta_dot = 2 * v / car_length * sin(beta)
+    x_dot, y_dot, theta_dot
+end
+
+@inline function _step_nodelta(v, delta, thetac)
+    s, c = sincos(thetac)
+    x_dot = v*c
+    y_dot = v*s
+    theta_dot = 0
+    x_dot, y_dot, theta_dot
+end
 
 function step!(data::AckerData{T}, model::AckerParams, dt) where T
     v, delta = data.ctrl
     xc, yc, thetac = data.pose.statev
-    #println("DELTA: ", (v, delta, xc, yc, thetac))
-
     if abs(delta) < 0.001
-        s, c = sincos(thetac)
-        x_dot = v*c
-        y_dot = v*s
-        theta_dot = 0
+        x_dot, y_dot, theta_dot = _step_nodelta(v, delta, thetac)
     else
-        beta = atan(tan(delta) / 2)
-        s_thetac_beta, c_thetac_beta = sincos(thetac + beta)
-
-        x_dot = v * c_thetac_beta
-        y_dot = v * s_thetac_beta
-        theta_dot = 2 * v / model.car_length * sin(beta)
-        #println("SINBETA L TDOT", (sin(beta), model.car_length, theta_dot))
-        #println("XYDOT: ", (x_dot, y_dot))
+        x_dot, y_dot, theta_dot = _step(v, delta, thetac, model.car_length)
     end
     x = xc + x_dot * dt
     y = yc + y_dot * dt
     theta = thetac + theta_dot * dt
 
     data.pose = Pose2D{T}(x, y, theta)
-    return data
+    data
 end

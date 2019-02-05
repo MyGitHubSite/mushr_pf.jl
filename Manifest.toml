@@ -421,9 +421,9 @@ version = "0.8.2"
 
 [[Images]]
 deps = ["AxisArrays", "Base64", "ColorTypes", "ColorVectorSpace", "Colors", "FileIO", "FixedPointNumbers", "Graphics", "ImageAxes", "ImageCore", "ImageDistances", "ImageFiltering", "ImageMetadata", "ImageMorphology", "ImageShow", "ImageTransformations", "IndirectArrays", "LinearAlgebra", "MappedArrays", "OffsetArrays", "Random", "Reexport", "SIUnits", "SparseArrays", "StaticArrays", "Statistics", "StatsBase", "Test", "TiledIteration"]
-git-tree-sha1 = "cd938e28e4186b877851eb323231ad81d9d3534b"
+git-tree-sha1 = "127aeb2659d97d8f0489ca5cf291cca7fdd3f1f2"
 uuid = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
-version = "0.17.1"
+version = "0.17.2"
 
 [[IndirectArrays]]
 deps = ["Compat", "Test"]
@@ -544,6 +544,12 @@ deps = ["Libdl", "LinearAlgebra", "MacroTools", "Requires", "Test"]
 git-tree-sha1 = "51330bb45927379007e089997bf548fbe232589d"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 version = "0.4.3"
+
+[[NPZ]]
+deps = ["Compat", "Test", "ZipFile"]
+git-tree-sha1 = "73aabbee4f023b53b669e747e7b1081a1884cccf"
+uuid = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+version = "0.3.0"
 
 [[NaNMath]]
 deps = ["Compat"]
@@ -743,9 +749,9 @@ version = "0.7.0"
 
 [[Rotations]]
 deps = ["LinearAlgebra", "Random", "StaticArrays", "Statistics", "Test"]
-path = "/home/colinxs/workspace/Rotations.jl"
+git-tree-sha1 = "ffcdd81d77b333ad0507aa4d021f61a461b6681d"
 uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
-version = "0.10.0+"
+version = "0.10.0"
 
 [[RoundingIntegers]]
 deps = ["Test"]
@@ -824,9 +830,9 @@ version = "0.27.0"
 
 [[StatsFuns]]
 deps = ["Rmath", "SpecialFunctions", "Test"]
-git-tree-sha1 = "7e7658a6adf28c91db1290c84483e07cc59ea3a4"
+git-tree-sha1 = "b3a4e86aa13c732b8a8c0ba0c3d3264f55e6bb3e"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "0.7.1"
+version = "0.8.0"
 
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "SparseArrays"]
@@ -896,3 +902,9 @@ deps = ["LinearAlgebra", "Random", "SparseArrays", "Test"]
 git-tree-sha1 = "21772c33b447757ec7d3e61fcdfb9ea5c47eedcf"
 uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 version = "0.4.1"
+
+[[ZipFile]]
+deps = ["BinaryProvider", "Libdl", "Printf", "Test"]
+git-tree-sha1 = "4000c633efe994b2e10b31b6d91382c4b7412dac"
+uuid = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
+version = "0.8.0"

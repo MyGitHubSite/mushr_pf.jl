@@ -7,121 +7,63 @@ export LaserScanModel
 
 @inline amcl_init() = 1
 @inline amcl_combine(prob, p) = prob + p^3
-@inline amcl_update(weight, prob) = weight *= prob
-@inline amcl_final!(weights) = weights
+@inline amcl_update(weight, prob, inv_squash) = weight *= prob
 
-@inline std_init() = 1
-@inline std_combine(prob, p) = prob * p
-@inline std_update(weight, prob) = prob
-@inline std_final!(weights, inv_squash) = weights .^ inv_squash
+@noinline std_init() = 1
+@noinline std_combine(prob, p) = prob * p
+@noinline std_update(weight, prob, inv_squash) = prob ^ inv_squash
 
 @inline log_init() = 0
 @inline log_combine(prob, p) = prob + log(p)
-@inline log_update(weight, prob) = -prob
-@inline log_final!(weights, inv_squash) = weights #* inv_squash
+@inline log_update(weight, prob, inv_squash) = prob * inv_squash
 
-#TODO:(remove mutable, scratch)
-mutable struct LaserScanModel{M, F, F1, F2, F3, F4} <: AbstractSensorModel
+struct LaserScanModel{D, M, F, F1, F2, F3, S} <: AbstractSensorModel
     beammodel::M
     "rangemethodW(T_WP::Pose2D, theta_W)->(xhit_W, yhit_W)"
-    rangemethodW::F
-    _init::F1
-    _combine::F2
-    _update::F3
-    _final!::F4
-    #scratchposes
-    scratchhitposes
-    #scratchraw
-
-    # TODO: generated? somehow inline variable update funcs?
-    function LaserScanModel(beammodel::M, rangemethodW::F, type::Dict{Symbol, <:Any}=Dict(:name=>:std, :inv_squash=>0.3)) where {M,F}
-        name = type[:name]
-        if name === :std
+    rangemethod::F
+    init::F1
+    combine::F2
+    update::F3
+    inv_squash_factor::S
+    nposes::Int
+    function LaserScanModel{D}(beammodel::M, rangemethod::F, inv_squash_factor::S, nposes::Int, method=:std) where {D,M,F,S}
+        if method === :std
             init = std_init
             combine = std_combine
             update = std_update
-            final! = @closure (w)->std_final!(w, type[:inv_squash])
-        elseif name === :amcl
+        elseif method === :amcl
             init = amcl_init
             combine = amcl_combine
             update = amcl_update
-            final! = amcl_final!
-        elseif name === :log
+        elseif method === :log
             init = log_init
             combine = log_combine
             update = log_update
-            final! = @closure (w)->log_final!(w, type[:inv_squash])
         else
-            error("Type \"$name\" not know")
+            error("Type \"$method\" not know")
         end
-        new{M, F, typeof(init), typeof(combine), typeof(update), typeof(final!)}(beammodel, rangemethodW, init, combine, update, final!, [])
+        new{D,M,F,typeof(init),typeof(combine),typeof(update), S}(beammodel, rangemethod, init, combine, update, inv_squash_factor, nposes)
     end
 end
 
-function reweight!(weights_k, particles_WP_k::AbstractVector{<:Pose2D{T}}, obs_W_k, rng, dt, m::LaserScanModel) where T
+function reweight!(weights_k::Vector{W}, particles_WP_k::Vector{<:Pose2D{T}}, obs_W_k, rng, dt, m::LaserScanModel) where {W,T}
     obsangles_k, obsranges_W_k = obs_W_k
 
-    #@assert length(unique(weights_k)) == 1
-    #@assert isapprox(weights_k[1], 1/length(weights_k)) "$(weights_k[1])"
-    totalw = 0
-    empty!(m.scratchhitposes)
-    for i in eachindex(particles_WP_k)
-
-        prob = m._init()
+    #totalw = W(0)
+    @inbounds Threads.@threads for i in eachindex(particles_WP_k)
+        prob = W(m.init())
         T_WP = particles_WP_k[i]
-        j=0
-        for (obsangle, obsrange_W) in zip(obsangles_k, obsranges_W_k)
-
-            range_exp_W, T_WH = m.rangemethodW(T_WP, obsangle, :W)
-            #if j<5 && i<2
-            #    println((T_WH.statev))
-            #    println((obsrange_W, range_exp_W),"\n")
-            #end
-            #j+=1
+        @inbounds for (obsangle, obsrange_W) in zip(obsangles_k, obsranges_W_k)
+            range_exp_W = m.rangemethod(T_WP, -obsangle) #TODO: negative sign?
             p = m.beammodel(obsrange_W, range_exp_W)
-            #println((obsrange_W, range_exp_W, p))
-            @assert !iszero(p) && !isnan(p)
-            #x_W, y_W, theta_W = T_WP.statev
-            if i == 1
-                #println(length(obsangles_k))
-                #println((obsrange_W, range_exp_W))
-                push!(m.scratchhitposes, T_WH)
-                #println(p)
-            end
-            #@assert p <= 0
-            #wbar += p
-            #prob += p^3
-            #if iszero(p)
-            #    continue
-            #end
-            prob = m._combine(prob, p)
-            #println(prob)
-            #@assert !iszero(prob) && !isnan(prob)
-            #println(prob)
+            prob = m.combine(prob, p)
         end
-        #println("SQ ", m.inv_squash)
-        #println("WBAR ", wbar/length(obsangles_k))
-        weights_k[i] = m._update(weights_k[i], prob)
-        #println((weights_k[i], prob))
-        #println(prob)
-        #println(weights_k[i])
-        #if weights_k[i] > maxw
-        #    maxw=weights_k[i]
-        #    maxi=i
-        #    maxposes=poses
-        #end
-        #println("PROB ", prob)
+        @assert !iszero(prob) && !isnan(prob)
+        w = m.update(weights_k[i], prob, m.inv_squash_factor)
+        weights_k[i] = w
+        #totalw += w
     end
-
-    #TODO add back final!
-    #m._final!(weights_k)
-    #println(weights_k[1:10])
-    #weights_k ./= totalw
-    #println(weights_k[1:10])
-    #println(sum(weights_k))
-    #println(minimum(weights_k), "--", maximum(weights_k))
-    #for p in maxposes
-    #    push!(m.scratchhitposes, p)
-    #end
-    #println(exp(prob))
+    # Don't actually need to normalize, but keeping it here for now
+    # weights_k ./= totalw
+    weights_k
 end

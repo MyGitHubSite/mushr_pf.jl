@@ -40,22 +40,18 @@ end
 
 function reset!(particles::AbstractVector{Pose2D{P}}, pose::Pose2D, rng, m::BasicStochasticPredictModel) where {P}
     statev = pose.statev
-    for i in eachindex(particles)
+    @inbounds @simd for i in eachindex(particles)
         particles[i] = Pose2D{P}(statev + rand(rng, m.init_dist))
     end
 end
 
-#ctrlnoise(ctrl::SVecotr{N, T}, m::BasicStochasticPredictModel, rng) = SVector{N, T}(rand(rng, m.ctrl_dist)) + ctrl
-
 function predict!(particles::AbstractVector{Pose2D{P}}, ctrl::SVector{N, C}, rng, dt, m::BasicStochasticPredictModel) where {P,N,C}
-    for i in eachindex(particles)
+    @inbounds @simd for i in eachindex(particles)
         m.data.pose = particles[i]
         m.data.ctrl = ctrl + SVector{N, C}(rand(rng, m.ctrl_dist))
         step!(m.data, m.params, dt)
         particles[i] = Pose2D{P}(m.data.pose.statev + rand(rng, m.process_dist))
     end
 end
-
-
 
 end # module
