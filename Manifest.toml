@@ -753,9 +753,11 @@ version = "0.7.0"
 
 [[Rotations]]
 deps = ["LinearAlgebra", "Random", "StaticArrays", "Statistics", "Test"]
-git-tree-sha1 = "ffcdd81d77b333ad0507aa4d021f61a461b6681d"
+git-tree-sha1 = "daf78ab493b4aed8c2bdb98701bac84fe3ed7198"
+repo-rev = "feat/angle2d_from_rotmatrix"
+repo-url = "git@github.com:colinxs/Rotations.jl.git"
 uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
-version = "0.10.0"
+version = "0.10.0+"
 
 [[RoundingIntegers]]
 deps = ["Test"]
