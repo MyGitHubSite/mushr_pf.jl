@@ -13,11 +13,15 @@ run `instantiate`. Julia contains a built in package manager, and
 this command will install all the needed dependencies as defined by
 the `Project.toml` and `Manifest.toml` files in the root directory.
 By doing so, you will exactly replicate the development environment.
-4. Exit out of the Julia REPL and run `catkin build`
+4. If not installed already, install the `sensor_msgs`, `geometry_msgs`,
+`nav_msgs`, `vesc_msgs`, and `ackermann_msgs` packages
+(see [mushr_sim](git@github.com:personalrobotics/mushr_sim.git) for more details).
+5. Run `catkin build`
    (although like Python, there is nothing to build, this step just
    sets up your environment variables).
-5. Run `roslaunch MuSHRSLAM ParticleFilter.launch`
-6. The node will wait until an initial position is specified.
+6. Configure the ROS topic and service names appropriately (see below).
+7. Run `roslaunch MuSHRSLAM ParticleFilter.launch`
+8. The node will wait until an initial position is specified.
 
 One thing that you may be curious about is that the startup time is
 slow relative to Python. This is because Julia is a just-in-time or
