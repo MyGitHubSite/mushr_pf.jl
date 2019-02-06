@@ -3,12 +3,11 @@
 #=
 curdir="$(dirname "$(readlink -f "$0")")"
 parentdir=$(dirname "$curdir")
-exec julia --project="$parentdir" "${BASH_SOURCE[0]}"
+exec julia-1.0.3 --project="$parentdir" "${BASH_SOURCE[0]}"
 =#
 module ROSWrapper
 #TODO strongly and consistently type (esp w/ gpu to avoid Float64/32 conv)
 #TODO get rid of branching in cb's
-
 using RoboLib.Util: binarize, takeN, rangebearing2point
 using CoordinateTransformations, Rotations
 using RoboLib.Geom: Pose2D, project2D, Scale2D

@@ -82,7 +82,7 @@ end
 function rosheader(frame_id, stamp=nothing)
     header = Header()
     header.frame_id = frame_id
-    header.stamp = isnothing(stamp) ? get_rostime() : stamp
+    header.stamp = stamp===nothing ? get_rostime() : stamp
     header
 end
 
