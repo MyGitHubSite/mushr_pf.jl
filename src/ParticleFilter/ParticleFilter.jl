@@ -8,7 +8,6 @@ using MuSHRSLAM.SensorModels
 using MuSHRSLAM.MotionModels: AckerParams, AckerData, step!, BasicStochasticPredictModel, predict!, reset!
 using MuSHRSLAM.MotionModels
 using RoboLib.Geom: Pose2D
-using FastClosures
 using CoordinateTransformations, Rotations
 using StaticArrays
 

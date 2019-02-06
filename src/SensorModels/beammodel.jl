@@ -1,6 +1,5 @@
 using Distributions: Normal, Exponential, pdf
 using LinearAlgebra
-using FastClosures
 
 struct BeamPDF{T<:AbstractFloat} <: AbstractBeamPDF
     a_hit::T
