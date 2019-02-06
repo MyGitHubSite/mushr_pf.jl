@@ -14,20 +14,20 @@ this command will install all the needed dependencies as defined by
 the `Project.toml` and `Manifest.toml` files in the root directory.
 By doing so, you will exactly replicate the development environment.
 
-Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate();
-Pkg.built(); exit()' from the root of the cloned repo as a shortcut.
+    Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build(); exit()` from the root of the cloned repo as a shortcut.
 
-**NOTE:** If you are installing on the Jetson TX2, a patch is required
-for one of the dependencies. From the root directory of the repo run 
+    **NOTE:** If you are installing on the Jetson TX2, a patch is required
+for one of the dependencies. From the root directory of the repo run
 `cd ./deps && ./jetson_install.sh`. The script will prompt you for
-sudo permissions, but do not run the script itself with `sudo`.
+`sudo` permissions, but do not run the script itself with `sudo`.
 
 4. If not installed already, install the `sensor_msgs`, `geometry_msgs`,
 `nav_msgs`, `vesc_msgs`, and `ackermann_msgs` packages
 (see [mushr_sim](git@github.com:personalrobotics/mushr_sim.git) for more details).
 5. Run `catkin build`
    (although like Python, there is nothing to build, this step just
-   sets up your environment variables).
+   sets up your environment variables) and run `source /path/to/mushr/workspace/devel/setup.{sh, bash, zsh}` depending on
+   your command line environment.
 6. Configure the ROS topic and service names appropriately (see below).
 7. Run `roslaunch MuSHRSLAM ParticleFilter.launch`
 8. The node will wait until an initial position is specified.
