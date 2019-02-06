@@ -3,17 +3,27 @@
 
 ## Install Instructions
 1. This library is built using [Julia](https://julialang.org/downloads/).
-   To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH`.
+   To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH` environment variable.
    [This](https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh) script
-   can help automate that process for you. To use it, just run `bash -ci "$(curl -fsSL https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh)"`
+   can help automate that process for you. To use it, just run
+
+   ```bash -ci "$(curl -fsSL https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh)"```
 
 2. Clone the repo into your ROS workspace.
+3. The library used to interoperate with Python
+    ([PyCall](https://github.com/JuliaPy/PyCall.jl)) needs to be linked
+    to the same Python binary that you use with ROS. By default this is
+    the result of executing `which python` on the command line. This can
+    be an issue if you perform the next step with an Anaconda environment
+    activated. Either make sure that `which python` is what you use
+    with ROS, or set the `PYTHON` environment variable to the correct
+    verison (_e.g._ `export PYTHON=/path/to/python`).
 3. In the root of the repo, start the Julia REPL with
-`julia --project`. Type the `]` character to enter "Pkg" mode and
-run `instantiate`. Julia contains a built in package manager, and
-this command will install all the needed dependencies as defined by
-the `Project.toml` and `Manifest.toml` files in the root directory.
-By doing so, you will exactly replicate the development environment.
+    `julia --project`. Type the `]` character to enter "Pkg" mode and
+    run `instantiate`. Julia contains a built in package manager, and
+    this command will install all the needed dependencies as defined by
+    the `Project.toml` and `Manifest.toml` files in the root directory.
+    By doing so, you will exactly replicate the development environment.
 
     Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build(); exit()` from the root of the cloned repo as a shortcut.
 
@@ -38,13 +48,17 @@ slow relative to Python. This is because Julia is a just-in-time or
 JIT compiled language. Compilation is not performed until a piece
 of code (i.e. a function) is needed. Note that if you want to hack at
 this codebase there are ways to get around this
-(i.e. [Revise.jl](https://github.com/timholy/Revise.jl)).
+(i.e. [Revise.jl](https://github.com/timholy/Revise.jl)). Additionally,
+you can change the optimization level from `-O3` to `-O0` under the
+args section of `ParticleFilter.launch`, although
+this will negatively affect runtime performance.
 
 ## Configuration
 All settings are located in the `scripts/settings.jl` file as key-value
 pairs. You can change the settings here, or via the ROS parameter server.
 To see which parameters are configurable via the parameter server,
-you can use `rosparam list` or `rosparam dump`. Additionally, the node will
+you can use `rosparam list` or `rosparam dump` after launching
+the node. Additionally, the node will
 log to `/rosout` and the terminal all the settings which are configurable
 via the parameter server, whether a parameter was found on the server,
 and what its value is as follows:
