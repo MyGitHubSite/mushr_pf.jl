@@ -4,8 +4,9 @@
 ## Install Instructions
 1. This library is built using [Julia](https://julialang.org/downloads/).
    To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH`.
-   [This](https://github.com/abelsiqueira/jill/blob/master/jill.sh) script
-   can help automate that process for you.
+   [This](https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh) script
+   can help automate that process for you. To use it, just run `bash -ci "$(curl -fsSL https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh)"`
+
 2. Clone the repo into your ROS workspace.
 3. In the root of the repo, start the Julia REPL with
 `julia --project`. Type the `]` character to enter "Pkg" mode and
