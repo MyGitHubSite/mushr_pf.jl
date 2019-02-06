@@ -17,7 +17,8 @@
     be an issue if you perform the next step with an Anaconda environment
     activated. Either make sure that `which python` is what you use
     with ROS, or set the `PYTHON` environment variable to the correct
-    verison (_e.g._ `export PYTHON=/path/to/python`).
+    verison (_e.g._ `export PYTHON=/path/to/python`). If you ever want to
+    switch versions, just re-run `julia -e 'using Pkg; Pkg.build("PyCall")`.
 3. In the root of the repo, start the Julia REPL with
     `julia --project`. Type the `]` character to enter "Pkg" mode and
     run `instantiate`. Julia contains a built in package manager, and
@@ -25,7 +26,8 @@
     the `Project.toml` and `Manifest.toml` files in the root directory.
     By doing so, you will exactly replicate the development environment.
 
-    Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build(); exit()` from the root of the cloned repo as a shortcut.
+    Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build(); exit()`
+    from the root of the cloned repo as a shortcut.
 
     **NOTE:** If you are installing on the Jetson TX2, a patch is required
 for one of the dependencies. From the root directory of the repo run
