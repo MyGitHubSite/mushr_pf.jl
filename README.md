@@ -13,6 +13,15 @@ run `instantiate`. Julia contains a built in package manager, and
 this command will install all the needed dependencies as defined by
 the `Project.toml` and `Manifest.toml` files in the root directory.
 By doing so, you will exactly replicate the development environment.
+
+Alternatively, you can run `julia --project -e 'using Pkg; Pkg.instantiate();
+Pkg.built(); exit()' from the root of the cloned repo as a shortcut.
+
+**NOTE:** If you are installing on the Jetson TX2, a patch is required
+for one of the dependencies. From the root directory of the repo run 
+`cd ./deps && ./jetson_install.sh`. The script will prompt you for
+sudo permissions, but do not run the script itself with `sudo`.
+
 4. If not installed already, install the `sensor_msgs`, `geometry_msgs`,
 `nav_msgs`, `vesc_msgs`, and `ackermann_msgs` packages
 (see [mushr_sim](git@github.com:personalrobotics/mushr_sim.git) for more details).
@@ -43,7 +52,7 @@ and what its value is as follows:
 ```
 Future versions will have these parameters documented in a ROS config file.
 
-_NOTE:_ The one exception is multi-threading which is not configurable at runtime.
+**NOTE:** The one exception is multi-threading which is not configurable at runtime.
 Instead, set the environment variable `JULIA_NUM_THREADS` to the integer
 number of threads you would like to use. The default is the number of
 physical CPU cores on your machine.
