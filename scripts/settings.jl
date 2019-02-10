@@ -28,7 +28,7 @@ const predictconf = Dict{Symbol,Any}(
 :car_length=>0.33,
 :stochastic=>true)
 
-const pfconf=Dict{Symbol,Any}(:max_particles=>3000, :rng_seed=>1234, :resampler=>:naive, :predictconf=>predictconf, :reweightconf=>reweightconf)
+const pfconf=Dict{Symbol,Any}(:max_particles=>3000, :dtype=>Float64, :rng_seed=>1234, :resampler=>:naive, :predictconf=>predictconf, :reweightconf=>reweightconf)
 
 const vescconf = Dict{Symbol, Any}(
 :speed2erpm_offset=>0.0,
