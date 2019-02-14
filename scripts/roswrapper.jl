@@ -56,6 +56,8 @@ function laser_cb(msg::LaserScan, rospf::ROSPF)
             dt = trecv - rospf.last_laser
             rospf.last_laser = trecv
 
+            #println((1/dt, size())
+
             idxs = validindices(msg.ranges, rospf)
             angles = takeN(view(rospf.angles, idxs), rospf.nrays)
             ranges = takeN(view(msg.ranges, idxs), rospf.nrays)
@@ -154,43 +156,29 @@ function get_params(d::Dict{Symbol, Any})
     end
 end
 
-function process_ros_map(map_msg, config)
-    mc = Dict{Symbol,Any}()
+function process_ros_map(map_msg)
     info = map_msg.map.info
 
-    #TODO shove into occmap
-    mc[:height] = info.height
-    mc[:width] = info.width
-    mc[:scale_WM] = info.resolution
-    mc[:p_xyz] = info.origin.position
-    mc[:q_xyzw] = info.origin.orientation
+    s = info.resolution
+    p = info.origin.position
+    q = info.origin.orientation
 
     # something something row major vs column major
-    occmap = reshape(map_msg.map.data', (mc[:width], mc[:height]))'
-    occmap = OccMap(occmap, (el)->el!=0)
+    occmap = reshape(map_msg.map.data', (info.width, info.height))'
+    occmap = OccMap((el)->el!=0, occmap, SVector(p.x, p.y), project2D(Quat(q.w, q.x, q.y, q.z)), s)
 
-    # represents the transformation matrix from map frame to world frame
-    # i.e. T_WP = T_WM ∘ T_MP and p_W = T_WM(p_M), where p_W is a vector
-    p, q = mc[:p_xyz], mc[:q_xyzw]
-    T_WM = Translation(p.x, p.y) ∘ LinearMap(project2D(Quat(q.w, q.x, q.y, q.z))) ∘ Scale2D(mc[:scale_WM])
-    T_MW = inv(T_WM)
-
-    return occmap, mc, T_MW, T_WM
+    return occmap
 end
 
 function main()
-    init_node("particle_filter", anonymous=true)
+    init_node("particle_filter")
 
     get_params(conf)
 
     loginfo("Waiting for map service...")
     wait_for_service(rosconf[:static_map_service])
     map_msg = ServiceProxy(rosconf[:static_map_service], GetMap)(GetMapRequest())
-    occmap, mapconf, T_MW, T_WM = process_ros_map(map_msg, conf)
-
-    #TODO: change launch defaults
-    reweightconf[:scale_WM] = mapconf[:scale_WM]
-    pfconf[:dtype] = Float64
+    occmap = process_ros_map(map_msg)
 
     pose_pub      = Publisher(rosconf[:pose_topic], PoseStamped, queue_size = 1)
     particle_pub  = Publisher(rosconf[:particle_topic], PoseArray, queue_size = 1)
@@ -199,8 +187,8 @@ function main()
 
     # setup PF
     pfconf[:rng] = Random.MersenneTwister(pfconf[:rng_seed])
-    pf = setup_pf(occmap, T_MW, Pose2D{Float64}, pfconf)
-    rospf = ROSPF(conf, pf, pose_pub, particle_pub, odom_pub, T_MW, T_WM, laserpose_pub)
+    pf = setup_pf(occmap, pfconf)
+    rospf = ROSPF(conf, pf, pose_pub, particle_pub, odom_pub, occmap, laserpose_pub)
 
     pose_sub  = Subscriber(rosconf[:initialpose_topic], PoseWithCovarianceStamped, clicked_pose_cb, (rospf,), queue_size=1)
 
@@ -215,12 +203,13 @@ function main()
     #ackermann_sub = Subscriber(rosconf[:ackermann_topic], AckermannDriveStamped, ackermann_cb, (rospf,), queue_size=1)
 
     loginfo("Initialization complete")
-    spin()
+    d = Duration(0.001)
+    while !is_shutdown() rossleep(d) end
 end
 
 end # module
 
 using .ROSWrapper: main
-if ! isinteractive()
+if !isinteractive()
     main()
 end

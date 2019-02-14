@@ -1,5 +1,5 @@
 #TODO: clean up this gawdawful struct
-mutable struct ROSPF{C, P, D, POPUB, PAPUB, ODPUB, T, LP, LP2}
+mutable struct ROSPF{C, P, D, POPUB, PAPUB, ODPUB, M, LP, LP2}
     conf::C
     pf::P
     dtype::D
@@ -8,8 +8,7 @@ mutable struct ROSPF{C, P, D, POPUB, PAPUB, ODPUB, T, LP, LP2}
     particle_pub::PAPUB
     odom_pub::ODPUB
 
-    T_MW::T
-    T_WM::T
+    occmap::M
 
     # scratch
     laserpose_pub::LP
@@ -36,7 +35,7 @@ mutable struct ROSPF{C, P, D, POPUB, PAPUB, ODPUB, T, LP, LP2}
     laserposes::LP2
 end
 
-function ROSPF(conf, pf, pose_pub, particle_pub, odom_pub, T_MW, T_WM, laserposepub)
+function ROSPF(conf, pf, pose_pub, particle_pub, odom_pub, occmap, laserposepub)
     mr_W = conf[:pfconf][:reweightconf][:max_range_meters]
     maxviz = conf[:rosconf][:max_viz_particles]
     nrays = conf[:pfconf][:reweightconf][:nrays]
@@ -51,7 +50,7 @@ function ROSPF(conf, pf, pose_pub, particle_pub, odom_pub, T_MW, T_WM, laserpose
     stg = conf[:rosconf][:vescconf][:steering2servo_gain]
 
     laserposes = Vector{Pose2D{conf[:pfconf][:dtype]}}(undef, nrays)
-    ROSPF(conf, pf, conf[:pfconf][:dtype], pose_pub, particle_pub, odom_pub, T_MW, T_WM, laserposepub, convert(Float64, mr_W), maxviz, nrays, -1.0, -1.0, -1.0,-1.0, spo, spg, sto, stg, false, ridxs,angles,laseridxs, laserposes)
+    ROSPF(conf, pf, conf[:pfconf][:dtype], pose_pub, particle_pub, odom_pub, occmap, laserposepub, convert(Float64, mr_W), maxviz, nrays, -1.0, -1.0, -1.0,-1.0, spo, spg, sto, stg, false, ridxs,angles,laseridxs, laserposes)
 end
 
 macro debugtask(ex)
