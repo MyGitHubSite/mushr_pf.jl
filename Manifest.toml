@@ -94,9 +94,9 @@ version = "0.5.0"
 
 [[CuArrays]]
 deps = ["AbstractFFTs", "Adapt", "CUDAapi", "CUDAdrv", "CUDAnative", "DiffRules", "ForwardDiff", "GPUArrays", "LinearAlgebra", "MacroTools", "NNlib", "Pkg", "Printf", "Random", "SparseArrays", "Test"]
-git-tree-sha1 = "27726e469088ef98bef32abf1bbb1aebbbf93229"
+git-tree-sha1 = "c1cd8792ca783987fcba2ed0d6b3b58176e6b13e"
 uuid = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
-version = "0.9.0"
+version = "0.9.1"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "Random", "Serialization", "Test"]
@@ -114,15 +114,15 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[DiffResults]]
 deps = ["Compat", "StaticArrays"]
-git-tree-sha1 = "db8acf46717b13d6c48deb7a12007c7f85a70cf7"
+git-tree-sha1 = "34a4a1e8be7bc99bc9c611b895b5baf37a80584c"
 uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
-version = "0.0.3"
+version = "0.0.4"
 
 [[DiffRules]]
 deps = ["Random", "Test"]
-git-tree-sha1 = "09d69da75967ec48a8b1ad0897ec9144ee052bf9"
+git-tree-sha1 = "26b96a1a506b06cb272ef60568d478adab039b96"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "0.0.8"
+version = "0.0.9"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Printf", "Random", "Statistics", "Test"]
@@ -239,12 +239,6 @@ git-tree-sha1 = "51330bb45927379007e089997bf548fbe232589d"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 version = "0.4.3"
 
-[[NPZ]]
-deps = ["Compat", "Test", "ZipFile"]
-git-tree-sha1 = "73aabbee4f023b53b669e747e7b1081a1884cccf"
-uuid = "15e1cf62-19b3-5cfa-8e77-841668bca605"
-version = "0.3.0"
-
 [[NaNMath]]
 deps = ["Compat"]
 git-tree-sha1 = "ce3b85e484a5d4c71dd5316215069311135fa9f2"
@@ -318,7 +312,7 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RayCast]]
 deps = ["BenchmarkTools", "CUDAnative", "CuArrays", "Distributions", "InteractiveUtils", "IterTools", "LoggingExtras", "MacroTools", "Random", "RecursiveArrayTools", "RoboLib", "SpecialFunctions", "StaticArrays", "Test"]
-git-tree-sha1 = "3cc17c438d26a8a8e7463c226d8cff8dbcc9cb2e"
+git-tree-sha1 = "e570ce29447f05d015bb7f12bf71c59ea45569cc"
 repo-rev = "master"
 repo-url = "https://github.com/colinxs/RayCast.jl.git"
 uuid = "b34ab1fe-1e7a-11e9-3c85-e50322b2de5d"
@@ -355,8 +349,8 @@ uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
 version = "0.5.0"
 
 [[RoboLib]]
-deps = ["Arpack", "CUDAnative", "CoordinateTransformations", "CuArrays", "Distances", "Distributions", "LinearAlgebra", "MacroTools", "PDMats", "Random", "Rotations", "StaticArrays", "Statistics"]
-git-tree-sha1 = "d5f366c80e95ee2e5c88a47ac7bb2ee15c2adb6d"
+deps = ["Arpack", "CUDAnative", "CoordinateTransformations", "CuArrays", "Distances", "Distributions", "LinearAlgebra", "LoggingExtras", "MacroTools", "PDMats", "Random", "Rotations", "StaticArrays", "Statistics"]
+git-tree-sha1 = "3d7e2277f6cdaa08edcb24c8a8ba3625f70cfafa"
 repo-rev = "master"
 repo-url = "https://github.com/colinxs/RoboLib.jl.git"
 uuid = "79865ad4-1e77-11e9-0337-d56b67668373"
@@ -374,7 +368,7 @@ git-tree-sha1 = "daf78ab493b4aed8c2bdb98701bac84fe3ed7198"
 repo-rev = "feat/angle2d_from_rotmatrix"
 repo-url = "https://github.com/colinxs/Rotations.jl.git"
 uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
-version = "0.11.0+"
+version = "0.11.1+"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -448,20 +442,8 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
-[[UnsafeArrays]]
-deps = ["Compat"]
-git-tree-sha1 = "fb8d569d402a60287ae631d0e65dc620346bca92"
-uuid = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
-version = "0.2.0"
-
 [[VersionParsing]]
 deps = ["Compat"]
 git-tree-sha1 = "c9d5aa108588b978bd859554660c8a5c4f2f7669"
 uuid = "81def892-9a0e-5fdd-b105-ffc91e053289"
 version = "1.1.3"
-
-[[ZipFile]]
-deps = ["BinaryProvider", "Libdl", "Printf", "Test"]
-git-tree-sha1 = "4000c633efe994b2e10b31b6d91382c4b7412dac"
-uuid = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
-version = "0.8.0"
