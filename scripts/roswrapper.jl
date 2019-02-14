@@ -165,14 +165,7 @@ function process_ros_map(map_msg)
 
     # something something row major vs column major
     occmap = reshape(map_msg.map.data', (info.width, info.height))'
-
-    println(typeof(occmap))
     occmap = OccMap((el)->el!=0, occmap, SVector(p.x, p.y), project2D(Quat(q.w, q.x, q.y, q.z)), s)
-
-    # represents the transformation matrix from map frame to world frame
-    # i.e. T_WP = T_WM ∘ T_MP and p_W = T_WM(p_M), where p_W is a vector
-    #T_WM = Translation(p.x, p.y) ∘ LinearMap(project2D(Quat(q.w, q.x, q.y, q.z))) ∘ Scale2D(mc[:scale_WM])
-    #T_MW = inv(T_WM)
 
     return occmap
 end
