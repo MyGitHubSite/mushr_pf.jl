@@ -1,4 +1,4 @@
 
 <launch>
-	<node pkg="MuSHRSLAM" type="roswrapper.jl" name="Particle_Filter" output="screen" args="-O3"/>
+	<node pkg="mushr_pf" type="roswrapper.jl" name="Particle_Filter" output="screen" args="-O3"/>
 </launch>

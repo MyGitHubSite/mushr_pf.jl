@@ -1,4 +1,4 @@
-module MuSHRSLAM
+module mushr_pf
 
 include("MotionModels/MotionModels.jl")
 include("SensorModels/SensorModels.jl")

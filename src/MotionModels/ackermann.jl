@@ -24,31 +24,42 @@ end
 @inline AckerData(pose, ctrl) = AckerData{Float64}(pose, ctrl)
 @inline AckerData() = AckerData{Float64}()
 
-@inline function _step(v, delta, thetac, car_length)
+@inline function _step(x, y, theta, dt, v, delta, car_length)
     beta = atan(tan(delta) / 2)
-    s_thetac_beta, c_thetac_beta = sincos(thetac + beta)
+    theta_dot = (2 * v * sin(beta)) / car_length
+    theta_n = theta + theta_dot * dt
 
-    x_dot = v * c_thetac_beta
-    y_dot = v * s_thetac_beta
-    theta_dot = 2 * v / car_length * sin(beta)
-    x_dot, y_dot, theta_dot
+    x_dot = (car_length / (2 * sin(beta))) * (sin(theta_n + beta) - sin(theta + beta))
+    y_dot = (car_length / (2 * sin(beta))) * (-cos(theta_n + beta) + cos(theta + beta))
+
+    x_n = x + x_dot
+    y_n = y + y_dot
+
+    x_n, y_n, theta_n
 end
 
-@inline function _step_nodelta(v, delta, thetac)
-    s, c = sincos(thetac)
-    x_dot = v*c
-    y_dot = v*s
-    theta_dot = 0
-    x_dot, y_dot, theta_dot
+@inline function _step_nodelta(x, y, theta, dt, v, delta, car_length)
+    beta = atan(tan(delta) / 2)
+    s_theta_beta, c_theta_beta = sincos(theta + beta)
+
+    x_dot = v * c_theta_beta
+    y_dot = v * s_theta_beta
+    theta_dot = (2 * v * sin(beta)) / car_length
+
+    x_n = x + x_dot * dt
+    y_n = y + y_dot * dt
+    theta_n = theta + theta_dot * dt
+
+    x_n, y_n, theta_n
 end
 
 function step!(data::AckerData{T}, model::AckerParams, dt) where T
     v, delta = data.ctrl
     xc, yc, thetac = data.pose.statev
     if abs(delta) < 0.001
-        x_dot, y_dot, theta_dot = _step_nodelta(v, delta, thetac)
+        x, y, theta = _step_nodelta(xc, yc, thetac, v, delta)
     else
-        x_dot, y_dot, theta_dot = _step(v, delta, thetac, model.car_length)
+        x, y, theta = _step(xc, yc, thetac, v, delta, model.car_length)
     end
     x = xc + x_dot * dt
     y = yc + y_dot * dt

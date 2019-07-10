@@ -3,10 +3,10 @@ module ParticleFilter
 using RayCast.Bresenham: cast_heading
 using Serialization
 using RoboLib.Util: rangebearing2point, binarize, img2grid, grid2img, binarize, euclidean
-using MuSHRSLAM.SensorModels: LaserScanModel, DiscBeamPDF
-using MuSHRSLAM.SensorModels
-using MuSHRSLAM.MotionModels: AckerParams, AckerData, step!, BasicStochasticPredictModel, predict!, reset!
-using MuSHRSLAM.MotionModels
+using mushr_pf.SensorModels: LaserScanModel, DiscBeamPDF
+using mushr_pf.SensorModels
+using mushr_pf.MotionModels: AckerParams, AckerData, step!, BasicStochasticPredictModel, predict!, reset!
+using mushr_pf.MotionModels
 using RoboLib.Geom: Pose2D, Scale2D, T2D, R2D
 using CoordinateTransformations, Rotations
 using StaticArrays

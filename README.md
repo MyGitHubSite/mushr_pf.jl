@@ -1,4 +1,4 @@
-# MuSHRSLAM: Helping you not SLAM into things
+# mushr_pf: Particle Filter
 
 
 ## Install Instructions
@@ -44,7 +44,7 @@ the patch is for :).
    sets up your environment variables) and run `source /path/to/mushr/workspace/devel/setup.{sh, bash, zsh}` depending on
    your command line environment.
 6. Configure the ROS topic and service names appropriately (see below).
-7. Run `roslaunch MuSHRSLAM ParticleFilter.launch`
+7. Run `roslaunch mushr_pf ParticleFilter.launch`
 8. The node will wait until an initial position is specified.
 
 One thing that you may be curious about is that the startup time is

@@ -3,7 +3,8 @@
 #=
 curdir="$(dirname "$(readlink -f "$0")")"
 parentdir=$(dirname "$curdir")
-exec julia-1.0.3 --project="$parentdir" "${BASH_SOURCE[0]}"
+echo "$parentdir"
+exec julia-1.0.4 --project="$parentdir" "${BASH_SOURCE[0]}"
 =#
 module ROSWrapper
 #TODO strongly and consistently type (esp w/ gpu to avoid Float64/32 conv)
@@ -15,7 +16,7 @@ using StaticArrays
 using LinearAlgebra
 using Statistics
 using Random
-using MuSHRSLAM.ParticleFilter: setup_pf, update_act!, update_obs!, reset!, resample!, OccMap
+using mushr_pf.ParticleFilter: setup_pf, update_act!, update_obs!, reset!, resample!, OccMap
 
 # ROS Imports
 using RobotOS

@@ -1,4 +1,4 @@
-name = "MuSHRSLAM"
+name = "mushr_pf"
 uuid = "e190e7d6-1e75-11e9-00a3-33341308b7c5"
 authors = ["Colin Summers <me@colinxsummers.com>"]
 version = "0.1.0"

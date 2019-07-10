@@ -28,18 +28,20 @@ const predictconf = Dict{Symbol,Any}(
 :car_length=>0.33,
 :stochastic=>true)
 
-const pfconf=Dict{Symbol,Any}(:max_particles=>3000, :dtype=>Float64, :rng_seed=>1234, :resampler=>:naive, :predictconf=>predictconf, :reweightconf=>reweightconf)
+const pfconf=Dict{Symbol,Any}(:max_particles=>1000, :dtype=>Float64, :rng_seed=>1234, :resampler=>:naive, :predictconf=>predictconf, :reweightconf=>reweightconf)
 
 const vescconf = Dict{Symbol, Any}(
 :speed2erpm_offset=>0.0,
-:speed2erpm_gain=>4614.0,
-:steering2servo_offset=>0.5304,
+:speed2erpm_gain=>-1900.0,
+#:speed2erpm_gain=>4614.0,
+#:steering2servo_offset=>0.5304,
+:steering2servo_offset=>0.43,
 :steering2servo_gain=>-1.2135)
 
 const rosconf = Dict{Symbol,Any}(
 :max_viz_particles=>50,
 :static_map_service=>"/static_map",
-:ackermann_topic=>"/vesc/low_level/ackermann_cmd_mux/output",
+:ackermann_topic=>"/mux/ackermann_cmd_mux/output",
 :servo_pos_topic=>"/vesc/sensors/servo_position_command",
 :vesc_topic=>"/vesc/sensors/core",
 :pose_topic=>"/pf/inferred_pose",

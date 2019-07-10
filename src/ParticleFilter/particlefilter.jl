@@ -3,9 +3,9 @@ using Distributions
 using Statistics
 using RoboLib.Geom: Pose2D
 #TODO(cx) extend or pass fn?
-import MuSHRSLAM.MotionModels: reset!
-import MuSHRSLAM.MotionModels: predict!
-import MuSHRSLAM.SensorModels: reweight!
+import mushr_pf.MotionModels: reset!
+import mushr_pf.MotionModels: predict!
+import mushr_pf.SensorModels: reweight!
 using LinearAlgebra
 using StatsBase: Weights, sample!
 
