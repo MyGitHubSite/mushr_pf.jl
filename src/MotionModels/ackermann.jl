@@ -57,13 +57,10 @@ function step!(data::AckerData{T}, model::AckerParams, dt) where T
     v, delta = data.ctrl
     xc, yc, thetac = data.pose.statev
     if abs(delta) < 0.001
-        x, y, theta = _step_nodelta(xc, yc, thetac, v, delta)
+        x, y, theta = _step_nodelta(xc, yc, thetac, dt, v, delta, model.car_length)
     else
-        x, y, theta = _step(xc, yc, thetac, v, delta, model.car_length)
+        x, y, theta = _step(xc, yc, thetac, dt, v, delta, model.car_length)
     end
-    x = xc + x_dot * dt
-    y = yc + y_dot * dt
-    theta = thetac + theta_dot * dt
 
     data.pose = Pose2D{T}(x, y, theta)
     data

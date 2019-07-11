@@ -35,7 +35,7 @@ const vescconf = Dict{Symbol, Any}(
 :speed2erpm_gain=>-1900.0,
 #:speed2erpm_gain=>4614.0,
 #:steering2servo_offset=>0.5304,
-:steering2servo_offset=>0.43,
+:steering2servo_offset=>0.42,
 :steering2servo_gain=>-1.2135)
 
 const rosconf = Dict{Symbol,Any}(
