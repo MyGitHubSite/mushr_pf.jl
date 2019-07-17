@@ -1,7 +1,6 @@
 # mushr_pf: Particle Filter
 
-
-## Install Instructions
+### Install
 1. This library is built using [Julia](https://julialang.org/downloads/).
    To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH` environment variable.
    [This](https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh) script
@@ -57,7 +56,7 @@ you can change the optimization level from `-O3` to `-O0` under the
 args section of `ParticleFilter.launch`, although
 this will negatively affect runtime performance.
 
-## Configuration
+### Configuration
 All settings are located in the `scripts/settings.jl` file as key-value
 pairs. You can change the settings here, or via the ROS parameter server.
 To see which parameters are configurable via the parameter server,
@@ -78,3 +77,20 @@ physical CPU cores on your machine, or one (I've seen both :)).
 
 To aid in development, please kindly file a `git issue` if you run across
 any problems or want something added. Happy localizing!
+
+### API
+Parameters can be changed in `settings.yaml`
+#### Publishers
+Topic | Type | Description
+------|------|------------
+`/pf/inferred_pose` | [geometry_msgs/PoseStamped](http://docs.ros.org/api/geometry_msgs/html/msg/PoseStamped.html) | Particle filter pose estimate
+`/pf/viz/particles` | [geometry_msgs/PoseArray](http://docs.ros.org/api/geometry_msgs/html/msg/PoseArray.html)| Partilcle array. Good for debugging
+`/pf/viz/laserpose` | [geometry_msgs/PoseArray](http://docs.ros.org/api/geometry_msgs/html/msg/PoseArray.html)| Pose fo the laser
+`/odom` | [nav_msgs/Odometry](http://docs.ros.org/api/nav_msgs/html/msg/Odometry.html)| Odom of car estimate from particle filter
+
+#### Subscribers
+Topic | Type | Description
+------|------|------------
+`/scan` | [sensor_msgs/LaserScan](http://docs.ros.org/api/sensor_msgs/html/msg/LaserScan.html) | Current laserscan
+`/vesc/sensors/servo_position_command` | [std_msgs/Float64](http://docs.ros.org/api/std_msgs/html/msg/Float64.html) | Current steering angle
+`/vesc/sensors/core` | [vesc_msgs/VescStateStamped](https://github.com/prl-mushr/vesc/blob/master/vesc_msgs/msg/VescStateStamped.msg)| Current speed
