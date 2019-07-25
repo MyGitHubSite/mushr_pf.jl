@@ -1,6 +1,7 @@
 # mushr_pf: Particle Filter
 
-### Install
+### Install  
+**Note:** If you are using a MuSHR image, you can skip steps 1 & 5
 1. Install Julia, there are 2 ways to do it:
    - `bash -ci "$(curl -fsSL https://raw.githubusercontent.com/colinxs/jill/feat/detect_arch/jill.sh)"`  
    - To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH` environment variable.  
