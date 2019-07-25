@@ -4,7 +4,7 @@
 curdir="$(dirname "$(readlink -f "$0")")"
 parentdir=$(dirname "$curdir")
 echo "$parentdir"
-exec julia-1.0.4 --project="$parentdir" "${BASH_SOURCE[0]}"
+exec julia-1.1.1 --project="$parentdir" "${BASH_SOURCE[0]}"
 =#
 module ROSWrapper
 #TODO strongly and consistently type (esp w/ gpu to avoid Float64/32 conv)
