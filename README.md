@@ -6,7 +6,7 @@
    - To install, follow the directions [here](https://julialang.org/downloads/). There's nothing to `sudo apt-get`, just a binary that you download and add to your `PATH` environment variable.  
 
 
-2. Clone this repo into your ROS workspace: `cd ~/catkin_ws/src && git clone https://github.com/prl-mushr/`  
+2. Clone this repo into your ROS workspace: `cd ~/catkin_ws/src && git clone https://github.com/prl-mushr/mushr_pf.git`  
 
 3. The library used to interoperate with Python
     ([PyCall](https://github.com/JuliaPy/PyCall.jl)) needs to be linked
@@ -14,7 +14,7 @@
     the result of executing `which python` on the command line. This can
     be an issue if you perform the next step with an Anaconda environment
     activated. To avoid this run:  
-	`export PYTHON=$(which python) > ~/.bashrc` and resource your workspace `. ~/.bashrc`  
+	`export PYTHON=$(which python) > ~/.bashrc` and re-source your workspace `. ~/.bashrc`  
     If you ever want to switch python versions, just change the PYTHON variable & re-run `julia -e 'using Pkg; Pkg.build("PyCall")`.  
 
 4. From the root directory of the repo run
@@ -26,7 +26,7 @@ the patch is for :). This builds all necessary dependencies listed in Project.to
 5. If not installed already, install the `sensor_msgs`, `geometry_msgs`,
 `nav_msgs`, `vesc_msgs`, and `ackermann_msgs` packages. The MuSHR images all have these installed.  
 
-6. `catkin make`   
+6. `cd ~/catkin_ws/ && catkin make`   
    (although like Python, there is nothing to build, this step just
    sets up your environment variables) and run `source ~/catkin_ws/devel/setup.bash`  
 
