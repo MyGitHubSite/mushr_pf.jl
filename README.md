@@ -1,4 +1,4 @@
-# mushr_pf: Particle Filter
+# mushr_pf.jl: Particle Filter
 
 ### Install  
 **Note:** If you are using a MuSHR image, you can skip steps 1 & 5
